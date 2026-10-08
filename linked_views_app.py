@@ -170,11 +170,11 @@ elif example == "Map + Scatter":
         st.subheader("Map → Scatter plot")
         hint("<b>Click</b> points on the map (shift-click for several) to select a country; the scatter shows only those sales.")
         pick = alt.selection_point(fields=['Country'])
-        proj = dict(type='mercator', scale=640, center=[110, 5])
+        proj = dict(type='mercator', scale=560, center=[110, 6], translate=[280, 190])  # explicit: auto-centring puts the map off-canvas in concat charts
 
         base = alt.Chart(alt.topo_feature(WORLD_URL, 'countries')).mark_geoshape(
-            fill='#1c2942', stroke='#0b1220', strokeWidth=0.6
-        ).project(**proj).properties(width=560, height=360)
+            fill='#243a5e', stroke='#3b5282', strokeWidth=0.5
+        ).project(**proj)
 
         points = alt.Chart(data).mark_circle(size=65).encode(
             longitude='Longitude:Q', latitude='Latitude:Q', color=cat_color,
@@ -182,11 +182,21 @@ elif example == "Map + Scatter":
             tooltip=['Country', 'Product Category', 'Sales'],
         ).add_params(pick).project(**proj)
 
+        labels = alt.Chart(pd.DataFrame(
+            [{'Country': c, 'lat': v[0], 'lon': v[1]} for c, v in COUNTRY_CENTRES.items()]
+        )).mark_text(color=MUTED, fontSize=11, dy=-14, fontWeight='bold').encode(
+            longitude='lon:Q', latitude='lat:Q', text='Country:N',
+        ).project(**proj)
+
+        # Size the layered map as one unit; otherwise the projection is centred for the
+        # default 300px canvas and the map is shifted off to one side.
+        world = alt.layer(base, points, labels).properties(width=560, height=380)
+
         scatter = alt.Chart(data).mark_circle(size=65, opacity=0.85).encode(
             x='Sales:Q', y='Quantity:Q', color=cat_color,
             tooltip=['Country', 'Product Category', 'Sales', 'Quantity'],
-        ).transform_filter(pick).properties(width=360, height=360, title='Sales vs quantity (selected)')
+        ).transform_filter(pick).properties(width=330, height=380, title='Sales vs quantity (selected)')
 
-        show(alt.hconcat(base + points, scatter, spacing=30))
+        show(alt.hconcat(world, scatter, spacing=30))
 
 st.caption("DV Lab 3 · TFB3133/TEB3133 · Data is synthetic (seeded) for demonstration.")
