@@ -87,11 +87,13 @@ elif example == "Pie + Bar":
     ).add_params(pick).properties(height=300)
 
     bars = alt.Chart(data).mark_bar().encode(
-        x='Country:N', y='sum(Sales):Q', color=alt.Color('Country:N', legend=None),
+        x='Country:N', y='sum(Sales):Q', color=alt.Color('Country:N'),
         tooltip=['Country', 'sum(Sales)'],
     ).transform_filter(pick).properties(height=300)
 
-    st.altair_chart(alt.hconcat(pie, bars), use_container_width=True)
+    # Concat charts share the colour scale by default; the pie's scale is pinned to the
+    # product categories, so country bars would get no colour. Keep the scales separate.
+    st.altair_chart(alt.hconcat(pie, bars).resolve_scale(color='independent'), use_container_width=True)
 
 elif example == "Map + Scatter":
     st.subheader("Map View + Scatter Plot")
